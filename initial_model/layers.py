@@ -179,3 +179,26 @@ def global_pooling_output_layer(state_below, scope_name, num_inputs, num_outputs
         )
         pooled = global_pooling_layer(conv_outputs, "{}_pooled".format(scope.name), pool_type)
     return pooled
+
+
+def randomized_relu(state_below, irange, name=None, is_training=False):
+    """
+    Randomized rectified linear unit
+    """
+    if not is_training:
+        # if testing, use standard relu
+        return tf.nn.relu(state_below, name=name)
+    else:
+        # sample in irange around 1 for pos side
+        pos_rand = tf.random_uniform(tf.shape(state_below), 1 - (irange / 2.0), 1 + (irange / 2.0))
+        # sampel in irange around 0 for neg side
+        neg_rand = tf.random_uniform(tf.shape(state_below), -irange / 2.0, irange / 2.0)
+
+        pos = tf.mul(state_below,  pos_rand)
+        neg = tf.mul(state_below, neg_rand)
+
+        where_pos = tf.greater(state_below, 0.0)
+
+        out = tf.select(where_pos, pos, neg, name=name)
+        return out
+
