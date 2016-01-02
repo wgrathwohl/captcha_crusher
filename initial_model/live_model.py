@@ -6,7 +6,7 @@ import tensorflow as tf
 import utils
 import os
 import numpy as np
-from captcha_model_train import inference_captcha, inference_captcha_mean_subtracted, MOVING_AVERAGE_DECAY
+from captcha_model_train import inference_captcha, MOVING_AVERAGE_DECAY
 import Image
 import sys
 import json
@@ -24,7 +24,7 @@ def live_inference_captcha_hard(image):
     # Subtract off the mean and divide by the variance of the pixels.
     float_image = tf.image.per_image_whitening(resized_image)
     float_image_batch = tf.reshape(float_image, (1, height, width, 1))
-    logits, _ = inference_captcha_mean_subtracted(float_image_batch, False, False, num_classes=36)
+    logits, _ = inference_captcha(float_image_batch, False, False, num_classes=36)
     return logits
 
 
@@ -82,106 +82,58 @@ class LiveModel:
         returns a list of labels for the image
         """
         logits = self.get_image_logits(image)
-        softmaxs = []
-        for logit in logits:
-            num = np.exp(logit[0])
-            den = sum(num)
-            softmax = num / den
-            softmaxs.append(softmax)
-        inds = [np.argmax(logit) for logit in logits]
-        pred = [self.ind_to_label[ind] for ind in inds]
-        confs = [softmax[ind] for softmax, ind in zip(softmaxs, inds)]
-        c = 1
-        for conf in confs:
-            c *= conf
-        return pred, c
+        pred = [self.ind_to_label[np.argmax(logit)] for logit in logits]
+        return pred
 
 
 # the ind -> label maps
 LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 LETTERS_PLUS_NUMBERS = 'abcdefghijklmnopqrstuvwxyz0123456789'
 
+# load the live models
+with tf.variable_scope("hard_model"):
+    lm_h = LiveModel(
+        '../models/hard_model.ckpt-15000',
+        live_inference_captcha_hard, (70, 200), 1, LETTERS_PLUS_NUMBERS, MOVING_AVERAGE_DECAY
+    )
+with tf.variable_scope("easy_model"):
+    lm_e = LiveModel(
+        '../models/easy_model.ckpt-8000',
+        live_inference_captcha_easy, (70, 200), 1, LETTERS, MOVING_AVERAGE_DECAY
+    )
 
 if __name__ == "__main__":
-    # print __file__, "FILE"
-    # abspath = os.path.abspath(__file__)
-    # dir_path = abspath.split('initial_model/live_model.py')[0]
-    # model_path = os.path.join(dir_path, "models")
-    # load the live models
-    with tf.variable_scope("hard_model"):
-        lm_h = LiveModel(
-            os.path.join('/home/will/Desktop/hard_captcha_mean_sub/model.ckpt-7600'),
-            live_inference_captcha_hard, (70, 200), 1, LETTERS_PLUS_NUMBERS, MOVING_AVERAGE_DECAY
-        )
-    dname = "/home/will/Desktop/hard_captchas_test/"
-    ims = os.listdir(dname)
-    c = 0
-    import shutil
-    import matplotlib.pyplot as plt
-    for i, im in enumerate(ims):
-        #print im
-        imp = os.path.join(dname, im)
-        image = Image.open(imp)
-        actual = im.split('-')[-1].split('.')[0]
-        im = np.asarray(image)
-        im = np.reshape(im[:, :, 0], [70, 200, 1])
-        pred, prob = lm_h.get_image_labels(im)
-        #print pred
-        pred = str.join('', pred)
-        #print actual, pred, actual == pred
-        #print ''
-        if actual.lower() != pred:
-            c += 1
-            #shutil.copy(imp, "/tmp/bad")
-            print actual, pred, actual == pred
-            #plt.imshow(image)
-            #print(pred)
-            #plt.show()
-        #else:
-            #shutil.copy(imp, "/tmp/good")
-    print("GOT ACCURACY: {}".format(1 - float(c) / len(ims)))
 
+    if len(sys.argv) != 3:
+        print "Usage: 'python run_captcha.py filenames.txt output.txt' where filenames.txt contains names of image files that you want labels for"
 
-    # with tf.variable_scope("easy_model"):
-    #     lm_e = LiveModel(
-    #         os.path.join(model_path, 'easy_model.ckpt-8000'),
-    #         live_inference_captcha_easy, (70, 200), 1, LETTERS, MOVING_AVERAGE_DECAY
-    #     )
+    fname = sys.argv[1]
+    out_fname = sys.argv[2]
+    res = []
 
-    # if len(sys.argv) != 3:
-    #     print "Usage: 'python run_captcha.py filenames.txt output.txt' where filenames.txt contains names of image files that you want labels for"
-
-    # fname = sys.argv[1]
-    # out_fname = sys.argv[2]
-    # res = []
-
-    # with open(fname, 'r') as f:
-    #     for line in f:
-    #         line = line.strip()
-    #         im = Image.open(line)
-    #         np_im = np.asarray(im)
-    #         if len(np_im.shape) == 3:
-    #             # this is a hard captcha
-    #             im = np.reshape(np_im[:, :, 0], [70, 200, 1])
-    #             pred, conf = lm_h.get_image_labels(im)
-    #             pred = str.join('', pred)
-    #             j = {}
-    #             j['filename'] = line
-    #             j['labels'] = pred
-    #             j['confidence'] = conf
-    #             j['type'] = "lowercase-letters+numbers"
-    #             res.append(j)
-    #         else:
-    #             # this is an easy captcha
-    #             im = np.reshape(np_im, [70, 200, 1])
-    #             pred, conf = lm_e.get_image_labels(im)
-    #             pred = str.join('', pred)
-    #             j = {}
-    #             j['filename'] = line
-    #             j['labels'] = pred
-    #             j['confidence'] = conf
-    #             j['type'] = "capital-letters"
-    #             res.append(j)
-    # with open(out_fname, 'w') as f:
-    #     for j in res:
-    #         f.write(json.dumps(j) + '\n')
+    with open(fname, 'r') as f:
+        for line in f:
+            line = line.strip()
+            im = Image.open(line)
+            np_im = np.asarray(im)
+            if len(np_im.shape) == 3:
+                # this is a hard captcha
+                im = np.reshape(np_im[:, :, 0], [70, 200, 1])
+                pred = lm_h.get_image_labels(im)
+                pred = str.join('', pred)
+                j = {}
+                j['filename'] = line
+                j['labels'] = pred
+                res.append(j)
+            else:
+                # this is an easy captcha
+                im = np.reshape(np_im, [70, 200, 1])
+                pred = lm_e.get_image_labels(im)
+                pred = str.join('', pred)
+                j = {}
+                j['filename'] = line
+                j['labels'] = pred
+                res.append(j)
+    with open(out_fname, 'w') as f:
+        for j in res:
+            f.write(json.dumps(j) + '\n')
