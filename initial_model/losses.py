@@ -30,6 +30,8 @@ def aux_logits(logits, labels_oh, zero_value=1e5, name=None):
 
     will be the average log probability of the labels that are in the label set but are not for the classifier
 
+    NOTE: This didn't really work :( shucks 
+
     """
     mask = tf.ones(tf.shape(logits))
     for label in labels_oh:
@@ -42,6 +44,9 @@ def aux_logits(logits, labels_oh, zero_value=1e5, name=None):
 
 
 def np_aux_logits(logits, labels_oh, zero_value=1e5, name=None):
+    """
+    numpy version aux logits for testing
+    """
 
     mask = np.ones(logits.shape)
     for label in labels_oh:
@@ -54,5 +59,3 @@ def np_aux_logits(logits, labels_oh, zero_value=1e5, name=None):
     pos_part = mask * logits
 
     return to_zero + pos_part
-
-

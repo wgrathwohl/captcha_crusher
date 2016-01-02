@@ -78,7 +78,7 @@ NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 3340 + 6511 + 4985 + 1358
 
 def inference_captcha_easy(images, is_training, companion_loss=False, num_classes=NUM_CLASSES):
     """
-    Build the captcha model. For the easy captchas
+    Build the captcha model. For the easy captchas. Obtains 99.7% accuracy for fully correct captchas
 
     Args:
         images: Images returned from distorted_inputs() or inputs().
@@ -87,11 +87,7 @@ def inference_captcha_easy(images, is_training, companion_loss=False, num_classe
     Returns:
         Logits.
     """
-    # We instantiate all variables using tf.get_variable() instead of
-    # tf.Variable() in order to share variables across multiple GPU training runs.
-    # If we only ran this model on a single GPU, we could simplify this function
-    # by replacing all instances of tf.get_variable() with tf.Variable().
-    #
+
     test = not is_training
     # conv1
     n_filters_conv1 = 64
@@ -126,14 +122,11 @@ def inference_captcha_easy(images, is_training, companion_loss=False, num_classe
     # local3
     n_outputs_local_3 = 500
     local3 = batch_normalized_linear_layer(reshape, "local3", dim, n_outputs_local_3, .01, 0.004, test=test)
-    #local3_drop = tf.nn.dropout(local3, keep_prob)
 
     # local4
     n_outputs_local_4 = 500
     local4 = batch_normalized_linear_layer(local3, "local4", n_outputs_local_3, n_outputs_local_4, .01, .004, test=test)
-    #local4_drop = tf.nn.dropout(local4, keep_prob)
 
-    # softmax, i.e. softmax(WX + b)
     # one for each character
     softmax_linear1 = batch_normalized_linear_layer(local4, "softmax_linear1", n_outputs_local_4, num_classes, .001, 0.004, test=test)
     softmax_linear2 = batch_normalized_linear_layer(local4, "softmax_linear2", n_outputs_local_4, num_classes, .001, 0.004, test=test)
@@ -161,7 +154,8 @@ def inference_captcha_easy(images, is_training, companion_loss=False, num_classe
 
 def inference_captcha(images, is_training, companion_loss=False, num_classes=NUM_CLASSES):
     """
-    Build the captcha model. For the main hard captcahs
+    Build the captcha model. For the main hard captcahs. Obtains 95% accuracy on all single outputs
+    and 83% fully correct
 
     Args:
         images: Images returned from distorted_inputs() or inputs().
@@ -244,7 +238,9 @@ def inference_captcha(images, is_training, companion_loss=False, num_classes=NUM
 
 def inference_captcha_fully_conv(images, is_training, companion_loss=False, num_classes=NUM_CLASSES):
     """
-    Build the captcha model. Fully convolutional version with mean pooling layers
+    Build the captcha model. Fully convolutional version with mean pooling layers. Obtains 96% accuracy on all single outputs
+    and 86% fully correct
+
 
     Args:
         images: Images returned from distorted_inputs() or inputs().
@@ -327,7 +323,8 @@ def inference_captcha_mean_subtracted(images, is_training, companion_loss=False,
     """
     Build the captcha model. Fully convolutional version with mean pooling layers
     This version takes the output filter maps takes the average of them and subtracts that from all of the output
-    tensors
+    tensors. Obtains 97.8% accuracy on all single outputs and 89% fully correct
+
 
     Args:
         images: Images returned from distorted_inputs() or inputs().
@@ -372,7 +369,6 @@ def inference_captcha_mean_subtracted(images, is_training, companion_loss=False,
     # local3
     n_outputs_conv4 = 256
     conv4 = batch_normalized_conv_layer(pool3, "conv4", n_filters_conv3, n_outputs_conv4, [3, 3], "MSFT", 0.004, test=test)
-    #local3_drop = tf.nn.dropout(local3, keep_prob)
 
     # local4
     n_outputs_conv5 = 256
@@ -470,8 +466,6 @@ def _generate_image_and_label_batch(image, label, min_queue_examples):
         images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS] size.
         labels: Labels. 1D tensor of [batch_size] size.
     """
-    # Create a queue that shuffles the examples, and then
-    # read 'FLAGS.batch_size' images + labels from the example queue.
     num_preprocess_threads = 16
     images, label_batch = tf.train.shuffle_batch(
         [image, label],
@@ -521,11 +515,6 @@ def distorted_inputs():
     # Randomly crop a [height, width] section of the image.
     distorted_image = tf.image.random_crop(reshaped_image, [height, width])
 
-    # Randomly flip the image horizontally.
-    #distorted_image = tf.image.random_flip_left_right(distorted_image)
-
-    # Because these operations are not commutative, consider randomizing
-    # randomize the order their operation.
     distorted_image = tf.image.random_brightness(distorted_image,
                                                  max_delta=63)
     distorted_image = tf.image.random_contrast(distorted_image,
@@ -639,7 +628,7 @@ def captcha_train(total_loss, global_step):
     with tf.control_dependencies([loss_averages_op]):
         opt = tf.train.AdamOptimizer(lr)
         grads = opt.compute_gradients(total_loss)
-        
+
 
     # Apply gradients.
     apply_gradient_op = opt.apply_gradients(grads, global_step=global_step)

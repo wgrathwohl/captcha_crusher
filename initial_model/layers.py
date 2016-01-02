@@ -143,12 +143,6 @@ def global_pooling_layer(state_below, scope_name, pool_type="mean"):
     Performs global pooling over a 2-d convolutional layer's output
     So BxHxWxD -> BxD 
     """
-    # visualize the final heatmaps
-    LETTERS_PLUS_NUMBERS = 'abcdefghijklmnopqrstuvwxyz0123456789'
-    slices = tf.split(3, 36, state_below)
-    for i in range(36):
-        sl = slices[i]
-        tf.image_summary(scope_name+"_{}".format(LETTERS_PLUS_NUMBERS[i]), sl) 
 
     if pool_type == "mean":
         f = tf.nn.avg_pool
@@ -183,11 +177,5 @@ def global_pooling_output_layer(state_below, scope_name, num_inputs, num_outputs
             state_below, "{}_conv_outputs".format(scope.name),
             num_inputs, num_outputs, filter_shape, stddev, wd, test=test
         )
-        # visualize the final heatmaps
-        LETTERS_PLUS_NUMBERS = 'abcdefghijklmnopqrstuvwxyz0123456789'
-        slices = tf.split(3, 36, conv_outputs)
-        for i in range(36):
-            sl = slices[i]
-            tf.image_summary(scope.name+"_{}".format(LETTERS_PLUS_NUMBERS[i]), sl) 
         pooled = global_pooling_layer(conv_outputs, "{}_pooled".format(scope.name), pool_type)
     return pooled
