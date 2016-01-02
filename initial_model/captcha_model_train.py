@@ -285,14 +285,11 @@ def inference_captcha_fully_conv(images, is_training, companion_loss=False, num_
     # local3
     n_outputs_conv4 = 256
     conv4 = batch_normalized_conv_layer(pool3, "conv4", n_filters_conv3, n_outputs_conv4, [3, 3], "MSFT", 0.004, test=test)
-    #local3_drop = tf.nn.dropout(local3, keep_prob)
 
     # local4
     n_outputs_conv5 = 256
     conv5 = batch_normalized_conv_layer(conv4, "conv5", n_outputs_conv4, n_outputs_conv5, [3, 3], "MSFT", .004, test=test)
-    #local4_drop = tf.nn.dropout(local4, keep_prob)
 
-    # softmax, i.e. softmax(WX + b)
     # one for each character
     softmax_linear1 = global_pooling_output_layer(conv5, "softmax_linear1", n_outputs_conv5, num_classes, [3, 3], "MSFT", .004, "mean", test=test)
     softmax_linear2 = global_pooling_output_layer(conv5, "softmax_linear2", n_outputs_conv5, num_classes, [3, 3], "MSFT", .004, "mean", test=test)
@@ -323,7 +320,7 @@ def inference_captcha_mean_subtracted(images, is_training, companion_loss=False,
     """
     Build the captcha model. Fully convolutional version with mean pooling layers
     This version takes the output filter maps takes the average of them and subtracts that from all of the output
-    tensors. Obtains 97.8% accuracy on all single outputs and 89% fully correct
+    tensors. Obtains 97.8% accuracy on all single outputs and 90% fully correct
 
 
     Args:
@@ -333,11 +330,7 @@ def inference_captcha_mean_subtracted(images, is_training, companion_loss=False,
     Returns:
         Logits.
     """
-    # We instantiate all variables using tf.get_variable() instead of
-    # tf.Variable() in order to share variables across multiple GPU training runs.
-    # If we only ran this model on a single GPU, we could simplify this function
-    # by replacing all instances of tf.get_variable() with tf.Variable().
-    #
+
     test = not is_training
     # conv1
     n_filters_conv1 = 32
@@ -536,7 +529,7 @@ def distorted_inputs():
 
 def inputs(eval_data):
     """
-    Construct input for food-101 evaluation using the Reader ops.
+    Construct input for captcha evaluation using the Reader ops.
 
     Args:
         eval_data: bool, indicating if one should use the train or eval data set.
@@ -548,8 +541,6 @@ def inputs(eval_data):
         images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS] size.
         labels: Labels. 1D tensor of [batch_size] size.
     """
-    #if not FLAGS.data_dir:
-    #  raise ValueError('Please supply a data_dir')
 
     if not eval_data:
         filenames = TRAIN_FNAMES
