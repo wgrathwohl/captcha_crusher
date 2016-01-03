@@ -163,10 +163,11 @@ def global_pooling_layer(state_below, scope_name, pool_type="mean"):
 
         reshaped_shape = reshaped.get_shape().as_list()
         assert len(reshaped_shape) == 2, reshaped_shape
-        assert reshaped_shape[-1]  == num_channels, reshaped_shape
+        assert reshaped_shape[-1] == num_channels, reshaped_shape
         return reshaped
 
     return pooled
+
 
 def global_pooling_output_layer(state_below, scope_name, num_inputs, num_outputs, filter_shape, stddev, wd, pool_type, test):
     """
@@ -201,4 +202,3 @@ def randomized_relu(state_below, irange, name=None, is_training=False):
 
         out = tf.select(where_pos, pos, neg, name=name)
         return out
-
