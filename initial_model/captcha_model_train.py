@@ -30,7 +30,7 @@ except:
         """Number of images to process in a batch."""
     )
 tf.app.flags.DEFINE_string(
-    'train_dir', '/home/will/Desktop/hard_captcha_mean_sub_rrelu2',
+    'train_dir', '/home/will/Desktop/hard_captcha_mean_sub_rrelu3',
     """Directory where to write event logs and checkpoint."""
 )
 tf.app.flags.DEFINE_integer(
@@ -46,14 +46,14 @@ tf.app.flags.DEFINE_boolean(
 COMPANION_LOSS = False
 MOVING_AVERAGE_DECAY = 0.9999     # The decay to use for the moving average.
 USE_CHECKPOINT = True
-CHECKPOINT_PATH = '/home/will/Desktop/hard_captcha_mean_sub_rrelu/model.ckpt-3000'
+CHECKPOINT_PATH = '/home/will/Desktop/hard_captcha_mean_sub_rrelu2/model.ckpt-600'
 NUM_EPOCHS_PER_DECAY = 3.0
 INITIAL_LEARNING_RATE = 0.00001     # Initial learning rate.
 NUM_CLASSES = 36
 TRAIN_FNAMES = [
-    '/home/will/code/tf/data/serialized_hard_captchas/hard_captchas_train4',
+    '/home/will/code/tf/data/serialized_hard_captchas/hard_captchas_train3',
     '/home/will/code/tf/data/serialized_hard_captchas/hard_captchas_train',
-    '/home/will/code/tf/data/serialized_hard_captchas/hard_captchas_train2',
+    '/home/will/code/tf/data/serialized_hard_captchas/hard_captchas_train4',
     '/home/will/code/tf/data/serialized_hard_captchas/hard_captchas_train3'
 ]
 TEST_FNAMES = [
@@ -149,8 +149,8 @@ def inference_captcha_easy(images, is_training, companion_loss=False, num_classe
             ]
         )
 
-
     return softmax_linear, comp_logits
+
 
 def inference_captcha(images, is_training, companion_loss=False, num_classes=NUM_CLASSES):
     """
@@ -164,11 +164,7 @@ def inference_captcha(images, is_training, companion_loss=False, num_classes=NUM
     Returns:
         Logits.
     """
-    # We instantiate all variables using tf.get_variable() instead of
-    # tf.Variable() in order to share variables across multiple GPU training runs.
-    # If we only ran this model on a single GPU, we could simplify this function
-    # by replacing all instances of tf.get_variable() with tf.Variable().
-    #
+
     test = not is_training
     # conv1
     n_filters_conv1 = 32
@@ -203,14 +199,11 @@ def inference_captcha(images, is_training, companion_loss=False, num_classes=NUM
     # local3
     n_outputs_local_3 = 500
     local3 = batch_normalized_linear_layer(reshape, "local3", dim, n_outputs_local_3, .01, 0.004, test=test)
-    #local3_drop = tf.nn.dropout(local3, keep_prob)
 
     # local4
     n_outputs_local_4 = 500
     local4 = batch_normalized_linear_layer(local3, "local4", n_outputs_local_3, n_outputs_local_4, .01, .004, test=test)
-    #local4_drop = tf.nn.dropout(local4, keep_prob)
 
-    # softmax, i.e. softmax(WX + b)
     # one for each character
     softmax_linear1 = batch_normalized_linear_layer(local4, "softmax_linear1", n_outputs_local_4, num_classes, .001, 0.004, test=test)
     softmax_linear2 = batch_normalized_linear_layer(local4, "softmax_linear2", n_outputs_local_4, num_classes, .001, 0.004, test=test)
@@ -241,7 +234,6 @@ def inference_captcha_fully_conv(images, is_training, companion_loss=False, num_
     Build the captcha model. Fully convolutional version with mean pooling layers. Obtains 96% accuracy on all single outputs
     and 86% fully correct
 
-
     Args:
         images: Images returned from distorted_inputs() or inputs().
         is_training: True if training, false if eval
@@ -249,11 +241,7 @@ def inference_captcha_fully_conv(images, is_training, companion_loss=False, num_
     Returns:
         Logits.
     """
-    # We instantiate all variables using tf.get_variable() instead of
-    # tf.Variable() in order to share variables across multiple GPU training runs.
-    # If we only ran this model on a single GPU, we could simplify this function
-    # by replacing all instances of tf.get_variable() with tf.Variable().
-    #
+
     test = not is_training
     # conv1
     n_filters_conv1 = 32
@@ -298,7 +286,6 @@ def inference_captcha_fully_conv(images, is_training, companion_loss=False, num_
     softmax_linear5 = global_pooling_output_layer(conv5, "softmax_linear5", n_outputs_conv5, num_classes, [3, 3], "MSFT", .004, "mean", test=test)
     softmax_linear6 = global_pooling_output_layer(conv5, "softmax_linear6", n_outputs_conv5, num_classes, [3, 3], "MSFT", .004, "mean", test=test)
 
-
     softmax_linear = [softmax_linear1, softmax_linear2, softmax_linear3, softmax_linear4, softmax_linear5, softmax_linear6]
 
     comp_logits = []
@@ -313,8 +300,8 @@ def inference_captcha_fully_conv(images, is_training, companion_loss=False, num_
             ]
         )
 
-
     return softmax_linear, comp_logits
+
 
 def inference_captcha_mean_subtracted(images, is_training, companion_loss=False, num_classes=NUM_CLASSES):
     """
@@ -396,6 +383,7 @@ def inference_captcha_mean_subtracted(images, is_training, companion_loss=False,
             ]
         )
     return softmax_linear, comp_logits
+
 
 def inference_captcha_mean_subtracted_residual(images, is_training, companion_loss=False, num_classes=NUM_CLASSES):
     """
