@@ -50,7 +50,8 @@ def batch_normalized_conv_layer(state_below, scope_name, n_inputs, n_outputs, fi
         beta = _variable_on_cpu("beta", [n_outputs], tf.constant_initializer(0.0))
         gamma = _variable_on_cpu("gamma", [n_outputs], tf.constant_initializer(1.0))
         bn = tf.add(tf.mul(conv_bn, gamma), beta)
-        output = tf.nn.relu(bn, name=scope.name)
+        # output = tf.nn.relu(bn, name=scope.name)
+        output = randomized_relu(bn, .1, name=scope.name, is_training=(not test))
         if not test:
             output = control_flow_ops.with_dependencies(dependencies=[assign_mean, assign_variance], output_tensor=output)
         _activation_summary(output)
@@ -84,7 +85,8 @@ def batch_normalized_linear_layer(state_below, scope_name, n_inputs, n_outputs, 
         beta = _variable_on_cpu("beta", [n_outputs], tf.constant_initializer(0.0))
         gamma = _variable_on_cpu("gamma", [n_outputs], tf.constant_initializer(1.0))
         bn = tf.add(tf.mul(act_bn, gamma), beta)
-        output = tf.nn.relu(bn, name=scope.name)
+        # output = tf.nn.relu(bn, name=scope.name)
+        output = randomized_relu(bn, .1, name=scope.name, is_training=(not test))
         if not test:
             output = control_flow_ops.with_dependencies(dependencies=[assign_mean, assign_variance], output_tensor=output)
         _activation_summary(output)

@@ -30,7 +30,7 @@ except:
         """Number of images to process in a batch."""
     )
 tf.app.flags.DEFINE_string(
-    'train_dir', '/home/will/Desktop/hard_captcha_mean_sub',
+    'train_dir', '/home/will/Desktop/hard_captcha_mean_sub_rrelu2',
     """Directory where to write event logs and checkpoint."""
 )
 tf.app.flags.DEFINE_integer(
@@ -45,10 +45,10 @@ tf.app.flags.DEFINE_boolean(
 
 COMPANION_LOSS = False
 MOVING_AVERAGE_DECAY = 0.9999     # The decay to use for the moving average.
-USE_CHECKPOINT = False
-CHECKPOINT_PATH = '/home/will/Desktop/hard_captcha_mean_sub/model.ckpt-7800'
+USE_CHECKPOINT = True
+CHECKPOINT_PATH = '/home/will/Desktop/hard_captcha_mean_sub_rrelu/model.ckpt-3000'
 NUM_EPOCHS_PER_DECAY = 3.0
-INITIAL_LEARNING_RATE = 0.001     # Initial learning rate.
+INITIAL_LEARNING_RATE = 0.00001     # Initial learning rate.
 NUM_CLASSES = 36
 TRAIN_FNAMES = [
     '/home/will/code/tf/data/serialized_hard_captchas/hard_captchas_train4',
@@ -371,7 +371,90 @@ def inference_captcha_mean_subtracted(images, is_training, companion_loss=False,
         batch_normalized_conv_layer(conv5, "output_tensor%d_raw" % (i+1), n_outputs_conv5, num_classes, [3, 3], "MSFT", .004, test=test)
         for i in range(6)
     ]
-  
+
+    output_tensor_mean = tf.add_n(raw_output_tensors) * (1.0/6.0)
+
+    output_tensors = [
+        output_tensor - output_tensor_mean
+        for output_tensor in raw_output_tensors
+    ]
+
+    softmax_linear = [
+        global_pooling_layer(output_tensor, "softmax_linear%d" % (i+1))
+        for i, output_tensor in enumerate(output_tensors)
+    ]
+
+    comp_logits = []
+    if companion_loss:
+        comp_logits.extend(
+            [
+                conv_companion_logits(pool1, "conv1", num_classes, .001, .004, .01),
+                conv_companion_logits(pool2, "conv2", num_classes, .001, .004, .01),
+                conv_companion_logits(pool3, "conv3", num_classes, .001, .004, .01),
+                linear_companion_logits(local3, "local3", n_outputs_local_3, num_classes, .001, .004, .01),
+                linear_companion_logits(local4, "local4", n_outputs_local_4, num_classes, .001, .004, .01)
+            ]
+        )
+    return softmax_linear, comp_logits
+
+def inference_captcha_mean_subtracted_residual(images, is_training, companion_loss=False, num_classes=NUM_CLASSES):
+    """
+    Build the captcha model. Fully convolutional version with mean pooling layers
+    This version takes the output filter maps takes the average of them and subtracts that from all of the output
+    tensors. Obtains 97.8% accuracy on all single outputs and 90% fully correct
+
+
+    Args:
+        images: Images returned from distorted_inputs() or inputs().
+        is_training: True if training, false if eval
+
+    Returns:
+        Logits.
+    """
+
+    test = not is_training
+    # conv1
+    n_filters_conv1 = 32
+    conv1 = batch_normalized_conv_layer(images, "conv1", 1, n_filters_conv1, [5, 5], "MSFT", 0.004, test=test)
+
+    # pool1
+    pool1 = tf.nn.max_pool(conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
+                           padding='SAME', name='pool1')
+
+    # conv2
+    n_filters_conv2 = 64
+    conv2 = batch_normalized_conv_layer(pool1, "conv2", n_filters_conv1, n_filters_conv2, [5, 5], "MSFT", 0.004, test=test)
+
+    # pool2
+    pool2 = tf.nn.max_pool(
+        conv2, ksize=[1, 3, 3, 1],
+        strides=[1, 2, 2, 1],
+        padding='SAME', name='pool2'
+    )
+
+    # conv3
+    n_filters_conv3 = 128
+    conv3 = batch_normalized_conv_layer(pool2, "conv3", n_filters_conv2, n_filters_conv3, [3, 3], "MSFT", 0.004, test=test)
+
+    # pool3
+    pool3 = tf.nn.max_pool(conv3, ksize=[1, 3, 3, 1],
+                           strides=[1, 2, 2, 1], padding='SAME', name='pool3')
+
+    # local3
+    n_outputs_conv4 = 256
+    conv4 = batch_normalized_conv_layer(pool3, "conv4", n_filters_conv3, n_outputs_conv4, [3, 3], "MSFT", 0.004, test=test)
+
+    # local4
+    n_outputs_conv5 = 256
+    conv5 = batch_normalized_conv_layer(conv4, "conv5", n_outputs_conv4, n_outputs_conv5, [3, 3], "MSFT", .004, test=test)
+
+    conv5_out = conv5 + conv4
+
+    raw_output_tensors = [
+        batch_normalized_conv_layer(conv5_out, "output_tensor%d_raw" % (i+1), n_outputs_conv5, num_classes, [3, 3], "MSFT", .004, test=test)
+        for i in range(6)
+    ]
+
     output_tensor_mean = tf.add_n(raw_output_tensors) * (1.0/6.0)
 
     output_tensors = [

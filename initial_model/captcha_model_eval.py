@@ -20,7 +20,7 @@ tf.app.flags.DEFINE_string('eval_dir', '/tmp/captcha_eval',
                            """Directory where to write event logs.""")
 tf.app.flags.DEFINE_string('eval_data', 'test',
                            """Either 'test' or 'train_eval'.""")
-tf.app.flags.DEFINE_string('checkpoint_dir', '/home/will/Desktop/hard_captcha_mean_sub',
+tf.app.flags.DEFINE_string('checkpoint_dir', '/home/will/Desktop/hard_captcha_mean_sub_rrelu',
                            """Directory where to read model checkpoints.""")
 tf.app.flags.DEFINE_integer('eval_interval_secs', 60 * 5,
                             """How often to run the eval.""")
