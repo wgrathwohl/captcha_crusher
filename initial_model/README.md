@@ -3,6 +3,4 @@ This package includes code to solve 2 types of captchas. Type 1 are 6 characters
 
 It is worth noting that my dataset for the "hard" captchas was very noisy ~8-9% incorrect labels, so while my best model solves the "hard" captchas with 90% accuracy, nearly all of the mistakes were actually due to incorrect labels. 
 
-The dataset and trained models will not be shared due to an agreement with my employeer.
-
 Tensorflow is required for this package to run
