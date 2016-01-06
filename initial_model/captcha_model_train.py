@@ -387,9 +387,8 @@ def inference_captcha_mean_subtracted(images, is_training, companion_loss=False,
 
 def inference_captcha_mean_subtracted_residual(images, is_training, companion_loss=False, num_classes=NUM_CLASSES):
     """
-    Build the captcha model. Fully convolutional version with mean pooling layers
-    This version takes the output filter maps takes the average of them and subtracts that from all of the output
-    tensors. Obtains 97.8% accuracy on all single outputs and 90% fully correct
+    Will implement residual learning from the recent MSR paper.
+    NOT FINISHED!!!!!!!
 
 
     Args:
@@ -469,6 +468,7 @@ def inference_captcha_mean_subtracted_residual(images, is_training, companion_lo
 
 
     return softmax_linear, comp_logits
+
 
 def captcha_loss(logits, all_labels, all_comp_logits, comp_loss_weight):
     """
