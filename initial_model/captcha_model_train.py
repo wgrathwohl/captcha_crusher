@@ -525,14 +525,14 @@ def _generate_image_and_label_batch(image, label, min_queue_examples):
     Construct a queued batch of images and labels.
 
     Args:
-        image: 3-D Tensor of [IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS] of type.float32.
+        image: 3-D Tensor of [IMAGE_SIZE[0], IMAGE_SIZE[1], 1] of type.float32.
         label: 1-D Tensor of type.int32
         min_queue_examples: int32, minimum number of samples to retain
           in the queue that provides of batches of examples.
 
     Returns:
-        images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS] size.
-        labels: Labels. 1D tensor of [batch_size] size.
+        images: Images. 4D tensor of [batch_size, IMAGE_SIZE[0], IMAGE_SIZE[0], 1] size.
+        labels: Labels. 2D tensor of [batch_size, 6] size.
     """
     num_preprocess_threads = 16
     images, label_batch = tf.train.shuffle_batch(
@@ -556,8 +556,8 @@ def distorted_inputs():
         ValueError: if no data_dir
 
     Returns:
-        images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3] size.
-        labels: Labels. 1D tensor of [batch_size] size.
+        images: Images. 4D tensor of [batch_size, IMAGE_SIZE[0], IMAGE_SIZE[0], 1] size.
+        labels: Labels. 2D tensor of [batch_size, 6] size.
     """
     filenames = TRAIN_FNAMES
 
@@ -576,9 +576,6 @@ def distorted_inputs():
 
     height = IMAGE_SIZE[0]
     width = IMAGE_SIZE[1]
-
-    # Image processing for training the network. Note the many random
-    # distortions applied to the image.
 
     # Randomly crop a [height, width] section of the image.
     distorted_image = tf.image.random_crop(reshaped_image, [height, width])
@@ -613,8 +610,8 @@ def inputs(eval_data):
         ValueError: if no data_dir
 
     Returns:
-        images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS] size.
-        labels: Labels. 1D tensor of [batch_size] size.
+        images: Images. 4D tensor of [batch_size, IMAGE_SIZE[0], IMAGE_SIZE[1], 1] size.
+        labels: Labels. 2D tensor of [batch_size, 6] size.
     """
 
     if not eval_data:
@@ -721,7 +718,7 @@ def captcha_train(total_loss, global_step):
 
 
 def train():
-    """Train FOOD-101 for a number of steps."""
+    """Train captcha model for a number of steps."""
     with tf.Graph().as_default():
         global_step = tf.Variable(0, trainable=False)
 
@@ -789,7 +786,7 @@ def train():
                 saver.save(sess, checkpoint_path, global_step=step)
 
 
-def main(argv=None):  # pylint: disable=unused-argument
+def main(argv=None):
     if gfile.Exists(FLAGS.train_dir):
         gfile.DeleteRecursively(FLAGS.train_dir)
     gfile.MakeDirs(FLAGS.train_dir)
