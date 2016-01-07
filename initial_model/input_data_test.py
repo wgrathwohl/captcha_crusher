@@ -86,7 +86,6 @@ class InputTest(tf.test.TestCase):
         expected = [[[red, green, blue]] * IMAGE_SIZE] * IMAGE_SIZE
         return record, expected
 
-
     def testHingeLoss(self):
       labels_py = [[0, 1], [1, 1], [0, 3]]
       labels_py = np.array([make_oh(label, 4) for label in labels_py])
