@@ -502,6 +502,10 @@ def captcha_loss(logits, all_labels, all_comp_logits, comp_loss_weight):
         cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy_%d' % i)
         tf.add_to_collection('losses', cross_entropy_mean)
 
+    """
+    This stuff here was supposed to add an extra loss to force output i to not predict the value of
+    label i+1 or label i-1, but it didnt really help :(
+    """
     # aux_cross_entropies = []
     # for dense_label, logit in zip(dense_labels, logits):
     #   aux_logits = losses.aux_logits(logit, dense_labels)
