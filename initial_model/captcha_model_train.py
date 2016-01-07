@@ -531,7 +531,7 @@ def _generate_image_and_label_batch(image, label, min_queue_examples):
           in the queue that provides of batches of examples.
 
     Returns:
-        images: Images. 4D tensor of [batch_size, IMAGE_SIZE[0], IMAGE_SIZE[0], 1] size.
+        images: Images. 4D tensor of [batch_size, IMAGE_SIZE[0], IMAGE_SIZE[1], 1] size.
         labels: Labels. 2D tensor of [batch_size, 6] size.
     """
     num_preprocess_threads = 16
@@ -556,7 +556,7 @@ def distorted_inputs():
         ValueError: if no data_dir
 
     Returns:
-        images: Images. 4D tensor of [batch_size, IMAGE_SIZE[0], IMAGE_SIZE[0], 1] size.
+        images: Images. 4D tensor of [batch_size, IMAGE_SIZE[0], IMAGE_SIZE[1], 1] size.
         labels: Labels. 2D tensor of [batch_size, 6] size.
     """
     filenames = TRAIN_FNAMES
