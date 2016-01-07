@@ -90,7 +90,7 @@ def eval_once(saver, summary_writer, top_k_ops, summary_op):
 
 
 def evaluate():
-    """Eval food-101 for a number of steps."""
+    """Eval captcha model for a number of steps."""
     with tf.Graph().as_default():
         # Get images and labels for captchas
         eval_data = FLAGS.eval_data == 'test'
